@@ -1524,11 +1524,8 @@ const observer = new IntersectionObserver((entries)=>{
   });
 },{threshold:0.15});
 document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
-</script><input type="file" accept="image/*" multiple="" style="display: none;">
 
-
-
-<script>
+// ── GitHub Save ──
 function getGithubToken() {
   let token = localStorage.getItem("github_token");
   if (!token) {
@@ -1543,18 +1540,6 @@ function resetGithubToken() {
   alert("Token removido!");
 }
 
-function showToast(msg) {
-  let toast = document.querySelector(".toast");
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.className = "toast";
-    document.body.appendChild(toast);
-  }
-  toast.innerText = msg;
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 3000);
-}
-
 async function salvarAlteracoes() {
   const token = getGithubToken();
   if (!token) return;
@@ -1563,12 +1548,16 @@ async function salvarAlteracoes() {
   const path = "index.html";
 
   const conteudo = document.documentElement.outerHTML;
-
   const url = `https://api.github.com/repos/${repo}/contents/${path}`;
 
   const resposta = await fetch(url, {
     headers: { Authorization: `token ${token}` }
   });
+
+  if (!resposta.ok) {
+    alert("Erro ao buscar arquivo no GitHub");
+    return;
+  }
 
   const data = await resposta.json();
   const sha = data.sha;
@@ -1592,6 +1581,11 @@ async function salvarAlteracoes() {
     alert("Erro ao salvar no GitHub");
   }
 }
-</script>
+
+</script><input type="file" accept="image/*" multiple="" style="display: none;">
+
+
+
+
 
 </body></html>
