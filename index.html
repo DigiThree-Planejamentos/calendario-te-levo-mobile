@@ -1540,46 +1540,53 @@ function resetGithubToken() {
   alert("Token removido!");
 }
 
-async function salvarAlteracoes() {
-  const token = getGithubToken();
-  if (!token) return;
+function salvarAlteracoes() {
+  var token = localStorage.getItem("github_token");
 
-  const repo = "DigiThree-Planejamentos/calendario-te-levo-mobile";
-  const path = "index.html";
-
-  const conteudo = document.documentElement.outerHTML;
-  const url = `https://api.github.com/repos/${repo}/contents/${path}`;
-
-  const resposta = await fetch(url, {
-    headers: { Authorization: `token ${token}` }
-  });
-
-  if (!resposta.ok) {
-    alert("Erro ao buscar arquivo no GitHub");
-    return;
+  if (!token) {
+    token = prompt("Cole seu token do GitHub:");
+    if (!token) return;
+    localStorage.setItem("github_token", token);
   }
 
-  const data = await resposta.json();
-  const sha = data.sha;
+  var repo = "DigiThree-Planejamentos/calendario-te-levo-mobile";
+  var path = "index.html";
 
-  const update = await fetch(url, {
-    method: "PUT",
+  var conteudo = document.documentElement.outerHTML;
+
+  var url = "https://api.github.com/repos/" + repo + "/contents/" + path;
+
+  fetch(url, {
     headers: {
-      Authorization: `token ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message: "update calendário",
-      content: btoa(unescape(encodeURIComponent(conteudo))),
-      sha: sha
-    })
-  });
-
-  if (update.ok) {
-    showToast("Salvo com sucesso 🚀");
-  } else {
+      Authorization: "token " + token
+    }
+  })
+  .then(function(res) {
+    if (!res.ok) {
+      throw new Error("Erro ao buscar arquivo");
+    }
+    return res.json();
+  })
+  .then(function(data) {
+    return fetch(url, {
+      method: "PUT",
+      headers: {
+        Authorization: "token " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "update calendario",
+        content: btoa(unescape(encodeURIComponent(conteudo))),
+        sha: data.sha
+      })
+    });
+  })
+  .then(function() {
+    alert("Salvo com sucesso 🚀");
+  })
+  .catch(function() {
     alert("Erro ao salvar no GitHub");
-  }
+  });
 }
 
 </script><input type="file" accept="image/*" multiple="" style="display: none;">
