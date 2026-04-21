@@ -1473,28 +1473,9 @@ function exportHTML(){
   const year=document.getElementById('hdrYear').innerText.trim();
   const sub=document.getElementById('hdrSub').innerText.trim();
   let src=document.documentElement.outerHTML;
-  src=src.replace(/(<span contenteditable="true" id="hdrClient"[^>]*>)[^<]*/,`$1${client}`);
-  src=src.replace(/(<em contenteditable="true" id="hdrYear"[^>]*>)[^<]*/,`$1${year}`);
-  src=src.replace(/(<span class="sub" contenteditable="true" id="hdrSub"[^>]*>)[^<]*/,`$1${sub}`);
-  src=src.replace(/let POSTS = \[[\s\S]*?\];/,`let POSTS = ${JSON.stringify(POSTS)};`);
-  src=src.replace(/let PLAN_DATA = \{[\s\S]*?\};/,`let PLAN_DATA = ${JSON.stringify(PLAN_DATA)};`);
-  src = src.replace(/\/\/ __SPECIALS_PATCH__[\s\S]*?\/\/ __END_SPECIALS_PATCH__/, '');
+  // SPECIALS_PATCH removido para evitar erro de syntax
   const specialsPatch = ``;
-  src = src.replace('// __SPECIALS_PATCH__
-MONTHS_CONFIG[0].special={"1":"🎆 Ano Novo","6":"🏖️ Feriado RJ"};MONTHS_CONFIG[0].notes="";
-MONTHS_CONFIG[1].special={"16":"🎭 Carnaval","17":"🎭 Carnaval","18":"🎭 Quarta-feira de Cinzas"};MONTHS_CONFIG[1].notes="";
-MONTHS_CONFIG[2].special={"8":"👩 Dia da Mulher","20":"🌿 Início do Outono"};MONTHS_CONFIG[2].notes="";
-MONTHS_CONFIG[3].special={"1":"🤥 Dia da Mentira","2":"🧩 Consciência do Autismo","3":"✝️ Sexta-Feira Santa","5":"🐣 Páscoa","6":"🙏 São Benedito","7":"🌍 Dia Mundial da Saúde","8":"🎗️ Combate ao Câncer","13":"💋 Dia do Beijo","14":"☕ Dia Mundial do Café","21":"🇧🇷 Tiradentes","22":"🌍 Dia da Terra","23":"⚔️ São Jorge","24":"🥩 Dia Int. do Churrasco","28":"👵 Dia da Sogra","30":"🎷 Dia Int. do Jazz"};MONTHS_CONFIG[3].notes="Te Levo Mobile — 20 posts planejados · Inauguração 29/04";
-MONTHS_CONFIG[4].special={"10":"💐 Dia das Mães","31":"🟡 Fim Maio Amarelo"};MONTHS_CONFIG[4].notes="";
-MONTHS_CONFIG[5].special={"5":"🌍 Meio Ambiente","12":"💑 Dia dos Namorados"};MONTHS_CONFIG[5].notes="";
-MONTHS_CONFIG[6].special={};MONTHS_CONFIG[6].notes="";
-MONTHS_CONFIG[7].special={"9":"👨 Dia dos Pais"};MONTHS_CONFIG[7].notes="";
-MONTHS_CONFIG[8].special={"7":"🇧🇷 Independência","15":"🛍️ Dia do Cliente","22":"🌸 Primavera"};MONTHS_CONFIG[8].notes="";
-MONTHS_CONFIG[9].special={"2":"👶 Dia das Crianças","12":"🇧🇷 N.Sra. Aparecida","31":"🎃 Halloween"};MONTHS_CONFIG[9].notes="";
-MONTHS_CONFIG[10].special={"2":"✝️ Finados","15":"🇧🇷 Proclamação Rep.","20":"⚫ Black Friday"};MONTHS_CONFIG[10].notes="";
-MONTHS_CONFIG[11].special={"8":"🎄 Imaculada Conceição","25":"🎄 Natal","31":"🥂 Réveillon"};MONTHS_CONFIG[11].notes="";
-// __END_SPECIALS_PATCH__
-// ── Init ──', specialsPatch + '\n// ── Init ──');
+  // SPECIALS_PATCH removido para evitar erro de syntax
   const slug=(client||'cliente').toLowerCase().replace(/\s+/g,'-');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([src],{type:'text/html'}));
@@ -1524,8 +1505,11 @@ const observer = new IntersectionObserver((entries)=>{
   });
 },{threshold:0.15});
 document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
+</script><input type="file" accept="image/*" multiple="" style="display: none;">
 
-// ── GitHub Save ──
+
+
+<script>
 function getGithubToken() {
   let token = localStorage.getItem("github_token");
   if (!token) {
@@ -1540,59 +1524,55 @@ function resetGithubToken() {
   alert("Token removido!");
 }
 
-function salvarAlteracoes() {
-  var token = localStorage.getItem("github_token");
-
-  if (!token) {
-    token = prompt("Cole seu token do GitHub:");
-    if (!token) return;
-    localStorage.setItem("github_token", token);
+function showToast(msg) {
+  let toast = document.querySelector(".toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "toast";
+    document.body.appendChild(toast);
   }
-
-  var repo = "DigiThree-Planejamentos/calendario-te-levo-mobile";
-  var path = "index.html";
-
-  var conteudo = document.documentElement.outerHTML;
-
-  var url = "https://api.github.com/repos/" + repo + "/contents/" + path;
-
-  fetch(url, {
-    headers: {
-      Authorization: "token " + token
-    }
-  })
-  .then(function(res) {
-    if (!res.ok) {
-      throw new Error("Erro ao buscar arquivo");
-    }
-    return res.json();
-  })
-  .then(function(data) {
-    return fetch(url, {
-      method: "PUT",
-      headers: {
-        Authorization: "token " + token,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: "update calendario",
-        content: btoa(unescape(encodeURIComponent(conteudo))),
-        sha: data.sha
-      })
-    });
-  })
-  .then(function() {
-    alert("Salvo com sucesso 🚀");
-  })
-  .catch(function() {
-    alert("Erro ao salvar no GitHub");
-  });
+  toast.innerText = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 3000);
 }
 
-</script><input type="file" accept="image/*" multiple="" style="display: none;">
+async function salvarAlteracoes() {
+  const token = getGithubToken();
+  if (!token) return;
 
+  const repo = "DigiThree-Planejamentos/calendario-te-levo-mobile";
+  const path = "index.html";
 
+  const conteudo = document.documentElement.outerHTML;
 
+  const url = `https://api.github.com/repos/${repo}/contents/${path}`;
 
+  const resposta = await fetch(url, {
+    headers: { Authorization: `token ${token}` }
+  });
+
+  const data = await resposta.json();
+  const sha = data.sha;
+
+  const update = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `token ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: "update calendário",
+      content: btoa(unescape(encodeURIComponent(conteudo))),
+      sha: sha
+    })
+  });
+
+  if (update.ok) {
+    showToast("Salvo com sucesso 🚀");
+  } else {
+    alert("Erro ao salvar no GitHub");
+  }
+}
+</script>
 
 </body></html>
