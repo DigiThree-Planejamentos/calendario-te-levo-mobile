@@ -238,7 +238,9 @@
 <div class="toolbar">
   <span class="toolbar-label">Ações:</span>
   <button class="btn btn-cyan" onclick="window.print()">🖨 Imprimir</button>
-  <button class="btn btn-ghost" onclick="exportHTML()">💾 Salvar HTML</button>
+  <button class="btn btn-cyan" onclick="salvarAlteracoes()">💾 Salvar alterações</button>
+  <button class="btn btn-ghost" onclick="resetGithubToken()">🔐 Token GitHub</button>
+  <button class="btn btn-ghost" onclick="exportHTML()">📥 Salvar HTML</button>
   <button class="btn btn-ghost" id="editModeBtn" onclick="toggleEditMode()">✏️ Modo Edição</button>
   <button class="btn btn-ghost" onclick="openDatasModal()">🗓 Datas Comemorativas</button>
   <div class="month-nav" id="monthNav"><button class="month-btn" id="mnav0">Jan</button><button class="month-btn" id="mnav1">Fev</button><button class="month-btn" id="mnav2">Mar</button><button class="month-btn active" id="mnav3">Abr</button><button class="month-btn" id="mnav4">Mai</button><button class="month-btn" id="mnav5">Jun</button><button class="month-btn" id="mnav6">Jul</button><button class="month-btn" id="mnav7">Ago</button><button class="month-btn" id="mnav8">Set</button><button class="month-btn" id="mnav9">Out</button><button class="month-btn" id="mnav10">Nov</button><button class="month-btn" id="mnav11">Dez</button></div>
@@ -1524,5 +1526,72 @@ const observer = new IntersectionObserver((entries)=>{
 document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
 </script><input type="file" accept="image/*" multiple="" style="display: none;">
 
+
+
+<script>
+function getGithubToken() {
+  let token = localStorage.getItem("github_token");
+  if (!token) {
+    token = prompt("Cole seu token do GitHub:");
+    if (token) localStorage.setItem("github_token", token);
+  }
+  return token;
+}
+
+function resetGithubToken() {
+  localStorage.removeItem("github_token");
+  alert("Token removido!");
+}
+
+function showToast(msg) {
+  let toast = document.querySelector(".toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "toast";
+    document.body.appendChild(toast);
+  }
+  toast.innerText = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 3000);
+}
+
+async function salvarAlteracoes() {
+  const token = getGithubToken();
+  if (!token) return;
+
+  const repo = "DigiThree-Planejamentos/calendario-te-levo-mobile";
+  const path = "index.html";
+
+  const conteudo = document.documentElement.outerHTML;
+
+  const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+
+  const resposta = await fetch(url, {
+    headers: { Authorization: `token ${token}` }
+  });
+
+  const data = await resposta.json();
+  const sha = data.sha;
+
+  const update = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `token ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: "update calendário",
+      content: btoa(unescape(encodeURIComponent(conteudo))),
+      sha: sha
+    })
+  });
+
+  if (update.ok) {
+    showToast("Salvo com sucesso 🚀");
+  } else {
+    alert("Erro ao salvar no GitHub");
+  }
+}
+</script>
 
 </body></html>
