@@ -1529,76 +1529,74 @@ document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
 
 
 <script>
-/* =========================================================
-   SUPABASE SAVE SYSTEM - TE LEVO MOBILE
-   VERSÃO BLINDADA
-========================================================= */
 (function(){
-  const SUPABASE_URL = 'https://aprneolltdkizvfakuus.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_tmWBQV8mZnk7FBvq1iZ3pA_lprGokcu';
+  var SUPABASE_URL = "https://aprneolltdkizvfakuus.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_tmWBQV8mZnk7FBvq1iZ3pA_lprGokcu";
+  var CALENDAR_ID = "te-levo-mobile-2026";
+  var CALENDAR_NAME = "Te Levo Mobile";
 
-  const CALENDAR_ID = 'te-levo-mobile-2026';
-  const CALENDAR_NAME = 'Te Levo Mobile';
+  var supabaseClient = null;
 
-  let supabaseClient = null;
-
-  function initSupabase(){
-    if(window.supabase && typeof window.supabase.createClient === 'function'){
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      return true;
+  function initSupabaseClient(){
+    try{
+      if(window.supabase && typeof window.supabase.createClient === "function"){
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    }catch(e){
+      console.warn("Erro ao iniciar Supabase:", e);
     }
-    return false;
   }
 
-  function getFieldValues(){
-    const values = {};
-    document.querySelectorAll('input, textarea, select').forEach((el, index) => {
-      const key = el.id || el.name || el.getAttribute('onchange') || el.getAttribute('placeholder') || ('field_' + index);
-      values[key + '_' + index] = {
-        value: el.value,
-        checked: el.checked || false,
+  function collectInputs(){
+    var values = {};
+    document.querySelectorAll("input, textarea, select").forEach(function(el, index){
+      var key = el.id || el.name || el.getAttribute("placeholder") || ("field_" + index);
+      values[key + "_" + index] = {
+        value: el.value || "",
+        checked: !!el.checked,
         type: el.type || el.tagName.toLowerCase()
       };
     });
     return values;
   }
 
-  function applyFieldValues(values){
+  function restoreInputs(values){
     if(!values) return;
 
-    document.querySelectorAll('input, textarea, select').forEach((el, index) => {
-      const key = el.id || el.name || el.getAttribute('onchange') || el.getAttribute('placeholder') || ('field_' + index);
-      const saved = values[key + '_' + index];
+    document.querySelectorAll("input, textarea, select").forEach(function(el, index){
+      var key = el.id || el.name || el.getAttribute("placeholder") || ("field_" + index);
+      var saved = values[key + "_" + index];
 
       if(!saved) return;
 
-      if(saved.type === 'checkbox' || saved.type === 'radio'){
+      if(saved.type === "checkbox" || saved.type === "radio"){
         el.checked = !!saved.checked;
       }else{
-        el.value = saved.value || '';
+        el.value = saved.value || "";
       }
     });
   }
 
   function getSiteData(){
-    const months = document.getElementById('monthsContainer');
+    var months = document.getElementById("monthsContainer");
+
     return {
-      html: months ? months.innerHTML : '',
-      fields: getFieldValues(),
+      html: months ? months.innerHTML : "",
+      fields: collectInputs(),
       header: {
-        client: document.getElementById('hdrClient')?.innerText || '',
-        year: document.getElementById('hdrYear')?.innerText || '',
-        sub: document.getElementById('hdrSub')?.innerText || ''
+        client: document.getElementById("hdrClient") ? document.getElementById("hdrClient").innerText : "",
+        year: document.getElementById("hdrYear") ? document.getElementById("hdrYear").innerText : "",
+        sub: document.getElementById("hdrSub") ? document.getElementById("hdrSub").innerText : ""
       },
       stats: {
-        total: document.getElementById('statTotal')?.innerText || '',
-        arte: document.getElementById('statArte')?.innerText || '',
-        foto: document.getElementById('statFoto')?.innerText || '',
-        story: document.getElementById('statStory')?.innerText || '',
-        reels: document.getElementById('statReels')?.innerText || '',
-        carrossel: document.getElementById('statCarrossel')?.innerText || '',
-        pend: document.getElementById('statPend')?.innerText || '',
-        postado: document.getElementById('statPostado')?.innerText || ''
+        total: document.getElementById("statTotal") ? document.getElementById("statTotal").innerText : "",
+        arte: document.getElementById("statArte") ? document.getElementById("statArte").innerText : "",
+        foto: document.getElementById("statFoto") ? document.getElementById("statFoto").innerText : "",
+        story: document.getElementById("statStory") ? document.getElementById("statStory").innerText : "",
+        reels: document.getElementById("statReels") ? document.getElementById("statReels").innerText : "",
+        carrossel: document.getElementById("statCarrossel") ? document.getElementById("statCarrossel").innerText : "",
+        pend: document.getElementById("statPend") ? document.getElementById("statPend").innerText : "",
+        postado: document.getElementById("statPostado") ? document.getElementById("statPostado").innerText : ""
       },
       savedAt: new Date().toISOString()
     };
@@ -1607,49 +1605,41 @@ document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
   function applySiteData(data){
     if(!data) return;
 
-    const months = document.getElementById('monthsContainer');
-
+    var months = document.getElementById("monthsContainer");
     if(months && data.html){
       months.innerHTML = data.html;
     }
 
     if(data.header){
-      const client = document.getElementById('hdrClient');
-      const year = document.getElementById('hdrYear');
-      const sub = document.getElementById('hdrSub');
-
-      if(client) client.innerText = data.header.client || '';
-      if(year) year.innerText = data.header.year || '';
-      if(sub) sub.innerText = data.header.sub || '';
+      if(document.getElementById("hdrClient")) document.getElementById("hdrClient").innerText = data.header.client || "";
+      if(document.getElementById("hdrYear")) document.getElementById("hdrYear").innerText = data.header.year || "";
+      if(document.getElementById("hdrSub")) document.getElementById("hdrSub").innerText = data.header.sub || "";
     }
 
-    applyFieldValues(data.fields);
+    restoreInputs(data.fields);
 
     if(data.stats){
-      const statMap = {
-        statTotal: 'total',
-        statArte: 'arte',
-        statFoto: 'foto',
-        statStory: 'story',
-        statReels: 'reels',
-        statCarrossel: 'carrossel',
-        statPend: 'pend',
-        statPostado: 'postado'
+      var map = {
+        statTotal: "total",
+        statArte: "arte",
+        statFoto: "foto",
+        statStory: "story",
+        statReels: "reels",
+        statCarrossel: "carrossel",
+        statPend: "pend",
+        statPostado: "postado"
       };
 
-      Object.keys(statMap).forEach(id => {
-        const el = document.getElementById(id);
-        const key = statMap[id];
-        if(el && data.stats[key] !== undefined && data.stats[key] !== ''){
+      Object.keys(map).forEach(function(id){
+        var el = document.getElementById(id);
+        var key = map[id];
+        if(el && data.stats[key] !== undefined && data.stats[key] !== ""){
           el.innerText = data.stats[key];
         }
       });
-    }else if(typeof updateStats === 'function'){
-      try{ updateStats(); }catch(e){ console.warn(e); }
     }
 
-    // Não chamar renderAll() aqui para não apagar o HTML salvo do Supabase.
-    if(typeof bindEvents === 'function'){
+    if(typeof bindEvents === "function"){
       try{ bindEvents(); }catch(e){ console.warn(e); }
     }
   }
@@ -1658,70 +1648,68 @@ document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
     try{
       localStorage.setItem(CALENDAR_ID, JSON.stringify(data));
     }catch(e){
-      console.warn('Erro ao salvar backup local:', e);
+      console.warn("Erro no backup local:", e);
     }
   }
 
   function loadLocalBackup(){
     try{
-      const raw = localStorage.getItem(CALENDAR_ID);
+      var raw = localStorage.getItem(CALENDAR_ID);
       if(!raw) return null;
       return JSON.parse(raw);
     }catch(e){
-      console.warn('Erro ao carregar backup local:', e);
       return null;
     }
   }
 
   async function saveSiteData(){
-    const payload = getSiteData();
+    var payload = getSiteData();
     saveLocalBackup(payload);
 
-    const btn = document.querySelector('button[onclick="saveSiteData()"], button[onclick="saveSitedata()"]');
-    const oldText = btn ? btn.innerText : '';
+    var btn = document.querySelector('button[onclick="saveSiteData()"], button[onclick="saveSitedata()"]');
+    var oldText = btn ? btn.innerText : "";
 
     if(btn){
-      btn.innerText = '⏳ Salvando...';
+      btn.innerText = "⏳ Salvando...";
       btn.disabled = true;
     }
 
     if(!supabaseClient){
-      initSupabase();
+      initSupabaseClient();
     }
 
     if(!supabaseClient){
       if(btn){
-        btn.innerText = oldText || '🌐 Salvar no site';
+        btn.innerText = oldText || "🌐 Salvar no site";
         btn.disabled = false;
       }
-      alert('Supabase não carregou. Verifique internet/CDN.');
+      alert("Supabase não carregou. Verifique internet/CDN.");
       return;
     }
 
     try{
-      const { data, error } = await supabaseClient
-        .from('calendarios')
+      var result = await supabaseClient
+        .from("calendarios")
         .upsert({
           id: CALENDAR_ID,
           nome: CALENDAR_NAME,
           dados: payload
-        }, { onConflict: 'id' })
+        }, { onConflict: "id" })
         .select();
 
-      if(error){
-        console.error('Erro Supabase:', error);
-        alert('Erro ao salvar no Supabase: ' + (error.message || JSON.stringify(error)));
+      if(result.error){
+        console.error("Erro Supabase:", result.error);
+        alert("Erro ao salvar no Supabase: " + (result.error.message || JSON.stringify(result.error)));
         return;
       }
 
-      console.log('Salvo no Supabase:', data);
-      alert('Salvo no site! ID: ' + CALENDAR_ID);
+      alert("Salvo no site! ID: " + CALENDAR_ID);
     }catch(e){
-      console.error('Erro inesperado:', e);
-      alert('Erro inesperado ao salvar: ' + (e.message || e));
+      console.error("Erro inesperado:", e);
+      alert("Erro inesperado ao salvar: " + (e.message || e));
     }finally{
       if(btn){
-        btn.innerText = oldText || '🌐 Salvar no site';
+        btn.innerText = oldText || "🌐 Salvar no site";
         btn.disabled = false;
       }
     }
@@ -1729,31 +1717,27 @@ document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
 
   async function loadSiteData(){
     if(!supabaseClient){
-      initSupabase();
+      initSupabaseClient();
     }
 
     if(supabaseClient){
       try{
-        const { data, error } = await supabaseClient
-          .from('calendarios')
-          .select('dados')
-          .eq('id', CALENDAR_ID)
+        var result = await supabaseClient
+          .from("calendarios")
+          .select("dados")
+          .eq("id", CALENDAR_ID)
           .maybeSingle();
 
-        if(error){
-          console.warn('Erro ao carregar Supabase:', error);
-        }
-
-        if(data && data.dados){
-          applySiteData(data.dados);
+        if(result.data && result.data.dados){
+          applySiteData(result.data.dados);
           return true;
         }
       }catch(e){
-        console.warn('Falha ao carregar Supabase:', e);
+        console.warn("Falha ao carregar Supabase:", e);
       }
     }
 
-    const local = loadLocalBackup();
+    var local = loadLocalBackup();
     if(local){
       applySiteData(local);
       return true;
@@ -1762,75 +1746,22 @@ document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
     return false;
   }
 
-  window.getSiteData = getSiteData;
-  window.applySiteData = applySiteData;
   window.saveSiteData = saveSiteData;
   window.saveSitedata = saveSiteData;
   window.loadSiteData = loadSiteData;
+  window.getSiteData = getSiteData;
+  window.applySiteData = applySiteData;
 
-  document.addEventListener('DOMContentLoaded', function(){
-    initSupabase();
-    setTimeout(loadSiteData, 250);
-    setTimeout(loadSiteData, 1000);
+  document.addEventListener("DOMContentLoaded", function(){
+    initSupabaseClient();
+    setTimeout(loadSiteData, 400);
+    setTimeout(loadSiteData, 1200);
   });
 
-  window.addEventListener('load', function(){
-    initSupabase();
-    setTimeout(loadSiteData, 350);
+  window.addEventListener("load", function(){
+    initSupabaseClient();
+    setTimeout(loadSiteData, 600);
   });
-})();
-</script>
-
-
-<script>
-/* =========================================================
-   FIX EXCLUIR POST PELO DOM
-   Mantém compatível com deletePostByKey(monthIndex, day)
-========================================================= */
-(function(){
-  function findCardByMonthDay(monthIndex, day){
-    const month = document.getElementById('month-' + monthIndex);
-    if(!month) return null;
-
-    const dayEl = month.querySelector('.cal-day[data-day="' + day + '"]');
-    if(!dayEl) return null;
-
-    return dayEl.querySelector('.post-card');
-  }
-
-  function createAddButton(monthIndex, day){
-    const btn = document.createElement('button');
-    btn.className = 'add-post-btn';
-    btn.setAttribute('onclick', 'openModal(' + monthIndex + ',' + day + ',true)');
-    btn.innerHTML = '＋ post';
-    return btn;
-  }
-
-  window.deletePostByKey = function(monthIndex, day){
-    const card = findCardByMonthDay(monthIndex, day);
-    if(!card){
-      alert('Não encontrei o post para excluir.');
-      return;
-    }
-
-    const ok = confirm('Excluir este post?');
-    if(!ok) return;
-
-    const dayEl = card.closest('.cal-day');
-    card.remove();
-
-    if(dayEl && !dayEl.querySelector('.add-post-btn')){
-      dayEl.appendChild(createAddButton(monthIndex, day));
-    }
-
-    if(typeof updateStats === 'function'){
-      try{ updateStats(); }catch(e){ console.warn(e); }
-    }
-
-    if(typeof saveSiteData === 'function'){
-      try{ saveSiteData(); }catch(e){ console.warn(e); }
-    }
-  };
 })();
 </script>
 
