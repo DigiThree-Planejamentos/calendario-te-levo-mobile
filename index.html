@@ -240,7 +240,7 @@
   <span class="toolbar-label">Ações:</span>
   <button class="btn btn-cyan" onclick="window.print()">🖨 Imprimir</button>
   <button class="btn btn-ghost" onclick="exportHTML()">💾 Salvar HTML</button>
-  <button class="btn btn-cyan" type="button" onclick="safeSaveSiteData()">🌐 Salvar no site</button>
+  <button class="btn btn-cyan" onclick="saveSiteData()">💾 Salvar no site</button>
   <button class="btn btn-ghost" id="editModeBtn" onclick="toggleEditMode()">✏️ Modo Edição</button>
   <button class="btn btn-ghost" onclick="openDatasModal()">🗓 Datas Comemorativas</button>
   <div class="month-nav" id="monthNav"><button class="month-btn" id="mnav0">Jan</button><button class="month-btn" id="mnav1">Fev</button><button class="month-btn" id="mnav2">Mar</button><button class="month-btn active" id="mnav3">Abr</button><button class="month-btn" id="mnav4">Mai</button><button class="month-btn" id="mnav5">Jun</button><button class="month-btn" id="mnav6">Jul</button><button class="month-btn" id="mnav7">Ago</button><button class="month-btn" id="mnav8">Set</button><button class="month-btn" id="mnav9">Out</button><button class="month-btn" id="mnav10">Nov</button><button class="month-btn" id="mnav11">Dez</button></div>
@@ -1469,36 +1469,35 @@ document.getElementById('datasOverlay').addEventListener('click', e=>{if(e.targe
 
 // ── Export ──
 function exportHTML(){
+  if(typeof syncDomValuesForSave === 'function'){
+    syncDomValuesForSave(document);
+  }
+
   const client=document.getElementById('hdrClient').innerText.trim();
   const year=document.getElementById('hdrYear').innerText.trim();
   const sub=document.getElementById('hdrSub').innerText.trim();
   let src=document.documentElement.outerHTML;
+
   src=src.replace(/(<span contenteditable="true" id="hdrClient"[^>]*>)[^<]*/,`$1${client}`);
   src=src.replace(/(<em contenteditable="true" id="hdrYear"[^>]*>)[^<]*/,`$1${year}`);
   src=src.replace(/(<span class="sub" contenteditable="true" id="hdrSub"[^>]*>)[^<]*/,`$1${sub}`);
-  src=src.replace(/let POSTS = \[[\s\S]*?\];/,`let POSTS = ${JSON.stringify(POSTS)};`);
-  src=src.replace(/let PLAN_DATA = \{[\s\S]*?\};/,`let PLAN_DATA = ${JSON.stringify(PLAN_DATA)};`);
-  src = src.replace(/\/\/ __SPECIALS_PATCH__[\s\S]*?\/\/ __END_SPECIALS_PATCH__/, '');
-  const specialsPatch = ``;
-  src = src.replace('// __SPECIALS_PATCH__
-MONTHS_CONFIG[0].special={"1":"🎆 Ano Novo","6":"🏖️ Feriado RJ"};MONTHS_CONFIG[0].notes="";
-MONTHS_CONFIG[1].special={"16":"🎭 Carnaval","17":"🎭 Carnaval","18":"🎭 Quarta-feira de Cinzas"};MONTHS_CONFIG[1].notes="";
-MONTHS_CONFIG[2].special={"8":"👩 Dia da Mulher","20":"🌿 Início do Outono"};MONTHS_CONFIG[2].notes="";
-MONTHS_CONFIG[3].special={"1":"🤥 Dia da Mentira","2":"🧩 Consciência do Autismo","3":"✝️ Sexta-Feira Santa","5":"🐣 Páscoa","6":"🙏 São Benedito","7":"🌍 Dia Mundial da Saúde","8":"🎗️ Combate ao Câncer","13":"💋 Dia do Beijo","14":"☕ Dia Mundial do Café","21":"🇧🇷 Tiradentes","22":"🌍 Dia da Terra","23":"⚔️ São Jorge","24":"🥩 Dia Int. do Churrasco","28":"👵 Dia da Sogra","30":"🎷 Dia Int. do Jazz"};MONTHS_CONFIG[3].notes="Te Levo Mobile — 20 posts planejados · Inauguração 29/04";
-MONTHS_CONFIG[4].special={"10":"💐 Dia das Mães","31":"🟡 Fim Maio Amarelo"};MONTHS_CONFIG[4].notes="";
-MONTHS_CONFIG[5].special={"5":"🌍 Meio Ambiente","12":"💑 Dia dos Namorados"};MONTHS_CONFIG[5].notes="";
-MONTHS_CONFIG[6].special={};MONTHS_CONFIG[6].notes="";
-MONTHS_CONFIG[7].special={"9":"👨 Dia dos Pais"};MONTHS_CONFIG[7].notes="";
-MONTHS_CONFIG[8].special={"7":"🇧🇷 Independência","15":"🛍️ Dia do Cliente","22":"🌸 Primavera"};MONTHS_CONFIG[8].notes="";
-MONTHS_CONFIG[9].special={"2":"👶 Dia das Crianças","12":"🇧🇷 N.Sra. Aparecida","31":"🎃 Halloween"};MONTHS_CONFIG[9].notes="";
-MONTHS_CONFIG[10].special={"2":"✝️ Finados","15":"🇧🇷 Proclamação Rep.","20":"⚫ Black Friday"};MONTHS_CONFIG[10].notes="";
-MONTHS_CONFIG[11].special={"8":"🎄 Imaculada Conceição","25":"🎄 Natal","31":"🥂 Réveillon"};MONTHS_CONFIG[11].notes="";
-// __END_SPECIALS_PATCH__
-// ── Init ──', specialsPatch + '\n// ── Init ──');
-  const slug=(client||'cliente').toLowerCase().replace(/\s+/g,'-');
+
+  if(typeof POSTS !== 'undefined'){
+    src=src.replace(/let POSTS = \[[\s\S]*?\];/,`let POSTS = ${JSON.stringify(POSTS)};`);
+  }
+  if(typeof PLAN_DATA !== 'undefined'){
+    src=src.replace(/let PLAN_DATA = \{[\s\S]*?\};/,`let PLAN_DATA = ${JSON.stringify(PLAN_DATA)};`);
+  }
+  if(typeof MONTHS_CONFIG !== 'undefined'){
+    src=src.replace(/const MONTHS_CONFIG = \[[\s\S]*?\];/,`let MONTHS_CONFIG = ${JSON.stringify(MONTHS_CONFIG)};`);
+    src=src.replace(/let MONTHS_CONFIG = \[[\s\S]*?\];/,`let MONTHS_CONFIG = ${JSON.stringify(MONTHS_CONFIG)};`);
+  }
+
+  const slug=(client||'cliente').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([src],{type:'text/html'}));
-  a.download=`calendario_editorial_${slug}_${year}.html`;a.click();
+  a.download=`calendario_editorial_${slug}_${year}.html`;
+  a.click();
   showToast('💾 HTML salvo com todas as edições e imagens!');
 }
 
@@ -1508,6 +1507,190 @@ function showToast(msg){
 }
 
 document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+
+
+/* ============================= */
+/* SUPABASE SAVE INTEGRATION */
+/* ============================= */
+
+const SUPABASE_URL = 'https://aprneolltdkizvfakuus.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_tmWBQV8mZnk7FBvq1iZ3pA_lprGokcu';
+
+const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+const CALENDAR_ID = "te-levo-mobile-abril-2026";
+const CALENDAR_NAME = "Te Levo Mobile";
+
+function syncDomValuesForSave(root){
+  const scope = root || document;
+  scope.querySelectorAll('textarea').forEach(el => {
+    el.textContent = el.value || '';
+  });
+  scope.querySelectorAll('input').forEach(el => {
+    if(el.type === 'checkbox' || el.type === 'radio'){
+      if(el.checked) el.setAttribute('checked','checked');
+      else el.removeAttribute('checked');
+    }else if(el.type !== 'file'){
+      el.setAttribute('value', el.value || '');
+    }
+  });
+  scope.querySelectorAll('select').forEach(sel => {
+    Array.from(sel.options).forEach(opt => {
+      if(opt.selected) opt.setAttribute('selected','selected');
+      else opt.removeAttribute('selected');
+    });
+  });
+}
+
+function getSiteData(){
+  syncDomValuesForSave(document);
+  return {
+    html: document.getElementById('monthsContainer')?.innerHTML || '',
+    plan: typeof PLAN_DATA !== 'undefined' ? PLAN_DATA : {},
+    header: {
+      client: document.getElementById('hdrClient')?.innerText || '',
+      year: document.getElementById('hdrYear')?.innerText || '',
+      sub: document.getElementById('hdrSub')?.innerText || ''
+    },
+    appState: {
+      posts: typeof POSTS !== 'undefined' ? POSTS : null,
+      monthsConfig: typeof MONTHS_CONFIG !== 'undefined' ? MONTHS_CONFIG : null
+    }
+  };
+}
+
+function applySiteData(data){
+
+  if(data?.appState?.posts && typeof POSTS !== 'undefined'){
+    if(Array.isArray(POSTS)){
+      POSTS.splice(0, POSTS.length, ...data.appState.posts);
+    }else{
+      try{ POSTS = data.appState.posts; }catch(e){ console.warn(e); }
+    }
+  }
+
+  if(data?.appState?.monthsConfig && typeof MONTHS_CONFIG !== 'undefined'){
+    if(Array.isArray(MONTHS_CONFIG)){
+      MONTHS_CONFIG.splice(0, MONTHS_CONFIG.length, ...data.appState.monthsConfig);
+    }else{
+      try{ MONTHS_CONFIG = data.appState.monthsConfig; }catch(e){ console.warn(e); }
+    }
+  }
+
+  if(data?.plan && typeof PLAN_DATA !== 'undefined'){
+    try{
+      PLAN_DATA = data.plan;
+    }catch(e){
+      if(PLAN_DATA && typeof PLAN_DATA === 'object'){
+        Object.keys(PLAN_DATA).forEach(k => delete PLAN_DATA[k]);
+        Object.assign(PLAN_DATA, data.plan);
+      }
+    }
+  }
+
+  if(data?.header){
+    if(document.getElementById('hdrClient')){
+      document.getElementById('hdrClient').innerText = data.header.client || '';
+    }
+    if(document.getElementById('hdrYear')){
+      document.getElementById('hdrYear').innerText = data.header.year || '';
+    }
+    if(document.getElementById('hdrSub')){
+      document.getElementById('hdrSub').innerText = data.header.sub || '';
+    }
+  }
+
+  if(typeof renderAll === 'function'){
+    renderAll();
+  }
+
+  if(data?.html){
+    const el = document.getElementById('monthsContainer');
+    if(el) el.innerHTML = data.html;
+  }
+
+  if(typeof updateStats === 'function'){
+    updateStats();
+  }
+
+  if(typeof observer !== 'undefined'){
+    document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
+  }
+}
+
+function saveLocalBackup(data){
+  localStorage.setItem(CALENDAR_ID, JSON.stringify(data));
+}
+
+function loadLocalBackup(){
+  const raw = localStorage.getItem(CALENDAR_ID);
+  if(!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+async function saveSiteData(){
+
+  const payload = getSiteData();
+
+  saveLocalBackup(payload);
+
+  if(!supabaseClient){
+    alert('Salvo só no navegador');
+    return;
+  }
+
+  try{
+    const { error } = await supabaseClient
+      .from('calendarios')
+      .upsert({
+        id: CALENDAR_ID,
+        nome: CALENDAR_NAME,
+        dados: payload
+      }, { onConflict: 'id' });
+
+    if(error){
+      console.error(error);
+      alert('Erro ao salvar no site');
+      return;
+    }
+
+    alert('Salvo no site!');
+  }catch(e){
+    console.error(e);
+  }
+}
+
+async function loadSiteData(){
+
+  if(supabaseClient){
+    try{
+      const { data } = await supabaseClient
+        .from('calendarios')
+        .select('dados')
+        .eq('id', CALENDAR_ID)
+        .maybeSingle();
+
+      if(data?.dados){
+        applySiteData(data.dados);
+        return;
+      }
+    }catch(e){
+      console.warn(e);
+    }
+  }
+
+  const local = loadLocalBackup();
+  if(local){
+    applySiteData(local);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSiteData();
+});
 
 // ── Init ──
 buildMonthNav();
@@ -1526,431 +1709,5 @@ const observer = new IntersectionObserver((entries)=>{
 document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
 </script><input type="file" accept="image/*" multiple="" style="display: none;">
 
-
-
-<script>
-/* SUPABASE_SAFE_TE_LEVO_V3 */
-(function(){
-  var SUPABASE_URL_SAFE = "https://aprneolltdkizvfakuus.supabase.co";
-  var SUPABASE_KEY_SAFE = "sb_publishable_tmWBQV8mZnk7FBvq1iZ3pA_lprGokcu";
-  var CALENDAR_ID_SAFE = "te-levo-mobile-2026";
-  var CALENDAR_NAME_SAFE = "Te Levo Mobile";
-  var clientSafe = null;
-
-  function initClientSafe(){
-    try{
-      if(window.supabase && typeof window.supabase.createClient === "function"){
-        clientSafe = window.supabase.createClient(SUPABASE_URL_SAFE, SUPABASE_KEY_SAFE);
-      }
-    }catch(err){
-      console.warn("Supabase init error", err);
-    }
-  }
-
-  function safeCollectData(){
-    var months = document.getElementById("monthsContainer");
-    var hdrClient = document.getElementById("hdrClient");
-    var hdrYear = document.getElementById("hdrYear");
-    var hdrSub = document.getElementById("hdrSub");
-
-    var fields = [];
-    var els = document.querySelectorAll("input, textarea, select");
-    for(var i = 0; i < els.length; i++){
-      fields.push({
-        value: els[i].value || "",
-        checked: !!els[i].checked,
-        type: els[i].type || els[i].tagName.toLowerCase()
-      });
-    }
-
-    return {
-      html: months ? months.innerHTML : "",
-      fields: fields,
-      header: {
-        client: hdrClient ? hdrClient.innerText : "",
-        year: hdrYear ? hdrYear.innerText : "",
-        sub: hdrSub ? hdrSub.innerText : ""
-      },
-      savedAt: new Date().toISOString()
-    };
-  }
-
-  function safeApplyData(data){
-    if(!data){ return; }
-
-    var months = document.getElementById("monthsContainer");
-    if(months && data.html){
-      months.innerHTML = data.html;
-    }
-
-    if(data.header){
-      var hdrClient = document.getElementById("hdrClient");
-      var hdrYear = document.getElementById("hdrYear");
-      var hdrSub = document.getElementById("hdrSub");
-      if(hdrClient){ hdrClient.innerText = data.header.client || ""; }
-      if(hdrYear){ hdrYear.innerText = data.header.year || ""; }
-      if(hdrSub){ hdrSub.innerText = data.header.sub || ""; }
-    }
-
-    if(data.fields && data.fields.length){
-      var els = document.querySelectorAll("input, textarea, select");
-      for(var i = 0; i < els.length && i < data.fields.length; i++){
-        if(data.fields[i].type === "checkbox" || data.fields[i].type === "radio"){
-          els[i].checked = !!data.fields[i].checked;
-        }else{
-          els[i].value = data.fields[i].value || "";
-        }
-      }
-    }
-  }
-
-  window.safeSaveSiteData = async function(){
-    var payload = safeCollectData();
-
-    try{
-      localStorage.setItem(CALENDAR_ID_SAFE, JSON.stringify(payload));
-    }catch(err){}
-
-    var btn = document.querySelector('button[onclick="safeSaveSiteData()"]');
-    var oldText = btn ? btn.innerText : "";
-    if(btn){
-      btn.innerText = "Salvando...";
-      btn.disabled = true;
-    }
-
-    if(!clientSafe){ initClientSafe(); }
-
-    if(!clientSafe){
-      if(btn){ btn.innerText = oldText || "🌐 Salvar no site"; btn.disabled = false; }
-      alert("Supabase não carregou.");
-      return;
-    }
-
-    try{
-      var result = await clientSafe
-        .from("calendarios")
-        .upsert({
-          id: CALENDAR_ID_SAFE,
-          nome: CALENDAR_NAME_SAFE,
-          dados: payload
-        }, { onConflict: "id" })
-        .select();
-
-      if(result.error){
-        console.error(result.error);
-        alert("Erro ao salvar no Supabase: " + (result.error.message || "erro desconhecido"));
-        return;
-      }
-
-      alert("Salvo no site! ID: " + CALENDAR_ID_SAFE);
-    }catch(err){
-      console.error(err);
-      alert("Erro ao salvar: " + (err.message || err));
-    }finally{
-      if(btn){
-        btn.innerText = oldText || "🌐 Salvar no site";
-        btn.disabled = false;
-      }
-    }
-  };
-
-  window.safeLoadSiteData = async function(){
-    if(!clientSafe){ initClientSafe(); }
-
-    if(clientSafe){
-      try{
-        var result = await clientSafe
-          .from("calendarios")
-          .select("dados")
-          .eq("id", CALENDAR_ID_SAFE)
-          .maybeSingle();
-
-        if(result.data && result.data.dados){
-          safeApplyData(result.data.dados);
-          return;
-        }
-      }catch(err){
-        console.warn(err);
-      }
-    }
-
-    try{
-      var local = localStorage.getItem(CALENDAR_ID_SAFE);
-      if(local){ safeApplyData(JSON.parse(local)); }
-    }catch(err){}
-  };
-
-  window.saveSiteData = window.safeSaveSiteData;
-  window.saveSitedata = window.safeSaveSiteData;
-
-  document.addEventListener("DOMContentLoaded", function(){
-    initClientSafe();
-    setTimeout(window.safeLoadSiteData, 800);
-  });
-
-  window.addEventListener("load", function(){
-    initClientSafe();
-    setTimeout(window.safeLoadSiteData, 1200);
-  });
-})();
-</script>
-
-
-<script>
-/* FALLBACK_MODAL_TE_LEVO */
-(function(){
-  var fallbackState = { monthIndex: null, day: null, isNew: false, card: null };
-
-  function monthNameFromIndex(index){
-    var names = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-    return names[index] || "";
-  }
-
-  function iconForType(type){
-    var map = {
-      arte: "🎨 Arte",
-      foto: "📸 Foto",
-      story: "📱 Story",
-      reels: "🎬 Reels",
-      carrossel: "🖼 Carrossel"
-    };
-    return map[type] || "🎨 Arte";
-  }
-
-  function getDayEl(monthIndex, day){
-    var month = document.getElementById("month-" + monthIndex);
-    if(!month) return null;
-    return month.querySelector('.cal-day[data-day="' + day + '"]');
-  }
-
-  function getCard(monthIndex, day){
-    var dayEl = getDayEl(monthIndex, day);
-    if(!dayEl) return null;
-    return dayEl.querySelector(".post-card");
-  }
-
-  function ensureModal(){
-    var existing = document.getElementById("fallbackPostModal");
-    if(existing) return existing;
-
-    var overlay = document.createElement("div");
-    overlay.id = "fallbackPostModal";
-    overlay.className = "modal-overlay";
-    overlay.innerHTML = ''
-      + '<div class="modal">'
-      + '  <div class="modal-header">'
-      + '    <h3>Editar post <span id="fallbackDateLabel"></span></h3>'
-      + '    <button class="modal-close" type="button" onclick="fallbackCloseModal()">×</button>'
-      + '  </div>'
-      + '  <div class="modal-body">'
-      + '    <div class="form-group">'
-      + '      <label>Título do post</label>'
-      + '      <input id="fallbackPostTitle" type="text" placeholder="Digite o título do post">'
-      + '    </div>'
-      + '    <div class="form-group">'
-      + '      <label>Tipo</label>'
-      + '      <select id="fallbackPostType">'
-      + '        <option value="arte">🎨 Arte</option>'
-      + '        <option value="foto">📸 Foto</option>'
-      + '        <option value="story">📱 Story</option>'
-      + '        <option value="reels">🎬 Reels</option>'
-      + '        <option value="carrossel">🖼 Carrossel</option>'
-      + '      </select>'
-      + '    </div>'
-      + '    <label class="pending-toggle"><input id="fallbackPostPendente" type="checkbox"> Marcar como pendente</label>'
-      + '    <label class="pending-toggle"><input id="fallbackPostPostado" type="checkbox"> Marcar como postado</label>'
-      + '  </div>'
-      + '  <div class="modal-footer">'
-      + '    <button class="btn btn-danger" type="button" onclick="fallbackDeletePost()">Excluir</button>'
-      + '    <button class="btn btn-ghost" type="button" onclick="fallbackCloseModal()">Cancelar</button>'
-      + '    <button class="btn btn-cyan" type="button" onclick="fallbackSavePost()">Salvar post</button>'
-      + '  </div>'
-      + '</div>';
-    document.body.appendChild(overlay);
-    return overlay;
-  }
-
-  function getCardType(card){
-    if(!card) return "arte";
-    var types = ["arte","foto","story","reels","carrossel"];
-    for(var i=0;i<types.length;i++){
-      if(card.classList.contains(types[i])) return types[i];
-    }
-    return "arte";
-  }
-
-  function buildCard(monthIndex, day, title, type, isPendente, isPostado){
-    var cls = "post-card " + type;
-    if(isPendente) cls += " pendente";
-    if(isPostado) cls += " postado";
-
-    var safeTitle = String(title || "Novo post")
-      .replace(/&/g,"&amp;")
-      .replace(/</g,"&lt;")
-      .replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;");
-
-    var html = ''
-      + '<div class="' + cls + '" onclick="openModal(' + monthIndex + ',' + day + ')">'
-      + '  <div class="card-actions">'
-      + '    <button class="card-btn" onclick="event.stopPropagation();togglePostado(' + monthIndex + ',' + day + ')" title="Toggle postado">✅</button>'
-      + '    <button class="card-btn" onclick="event.stopPropagation();openModal(' + monthIndex + ',' + day + ')">✏️</button>'
-      + '    <button class="card-btn" onclick="event.stopPropagation();deletePostByKey(' + monthIndex + ',' + day + ')">🗑</button>'
-      + '  </div>'
-      + '  <div class="post-type-tag">' + iconForType(type) + '</div>';
-
-    if(isPostado){
-      html += '<div class="postado-badge">✅ Postado</div>';
-    }
-
-    html += ''
-      + '  <div class="post-title" contenteditable="true" spellcheck="false" onclick="event.stopPropagation()" onblur="updateTitle(' + monthIndex + ',' + day + ',this.innerText)">' + safeTitle + '</div>'
-      + '  <div class="card-gallery"><button class="add-thumb-btn" onclick="event.stopPropagation();triggerCardImg(' + monthIndex + ',' + day + ')" title="Adicionar foto">＋</button></div>'
-      + '</div>';
-
-    var wrap = document.createElement("div");
-    wrap.innerHTML = html;
-    return wrap.firstElementChild;
-  }
-
-  window.openModal = function(monthIndex, day, isNew){
-    var modal = ensureModal();
-    var card = getCard(monthIndex, day);
-
-    fallbackState.monthIndex = monthIndex;
-    fallbackState.day = day;
-    fallbackState.isNew = !!isNew || !card;
-    fallbackState.card = card;
-
-    var title = card ? (card.querySelector(".post-title") ? card.querySelector(".post-title").innerText : "") : "";
-    var type = getCardType(card);
-
-    document.getElementById("fallbackDateLabel").innerText = day + " de " + monthNameFromIndex(monthIndex);
-    document.getElementById("fallbackPostTitle").value = title || "";
-    document.getElementById("fallbackPostType").value = type;
-    document.getElementById("fallbackPostPendente").checked = card ? card.classList.contains("pendente") : false;
-    document.getElementById("fallbackPostPostado").checked = card ? card.classList.contains("postado") : false;
-
-    modal.classList.add("open");
-  };
-
-  window.fallbackCloseModal = function(){
-    var modal = document.getElementById("fallbackPostModal");
-    if(modal) modal.classList.remove("open");
-  };
-
-  window.fallbackSavePost = function(){
-    var monthIndex = fallbackState.monthIndex;
-    var day = fallbackState.day;
-    var dayEl = getDayEl(monthIndex, day);
-
-    if(!dayEl){
-      alert("Não encontrei o dia no calendário.");
-      return;
-    }
-
-    var title = document.getElementById("fallbackPostTitle").value || "Novo post";
-    var type = document.getElementById("fallbackPostType").value || "arte";
-    var isPendente = document.getElementById("fallbackPostPendente").checked;
-    var isPostado = document.getElementById("fallbackPostPostado").checked;
-
-    var oldCard = getCard(monthIndex, day);
-    if(oldCard) oldCard.remove();
-
-    var addBtn = dayEl.querySelector(".add-post-btn");
-    if(addBtn) addBtn.remove();
-
-    dayEl.appendChild(buildCard(monthIndex, day, title, type, isPendente, isPostado));
-
-    if(typeof updateStats === "function"){
-      try{ updateStats(); }catch(e){ console.warn(e); }
-    }
-
-    if(typeof safeSaveSiteData === "function"){
-      try{ safeSaveSiteData(); }catch(e){ console.warn(e); }
-    }else if(typeof saveSiteData === "function"){
-      try{ saveSiteData(); }catch(e){ console.warn(e); }
-    }
-
-    fallbackCloseModal();
-  };
-
-  window.fallbackDeletePost = function(){
-    var monthIndex = fallbackState.monthIndex;
-    var day = fallbackState.day;
-    window.deletePostByKey(monthIndex, day);
-    fallbackCloseModal();
-  };
-
-  window.deletePostByKey = function(monthIndex, day){
-    var card = getCard(monthIndex, day);
-    var dayEl = getDayEl(monthIndex, day);
-
-    if(!card || !dayEl){
-      alert("Não encontrei o post para excluir.");
-      return;
-    }
-
-    if(!confirm("Excluir este post?")) return;
-
-    card.remove();
-
-    if(!dayEl.querySelector(".add-post-btn")){
-      var btn = document.createElement("button");
-      btn.className = "add-post-btn";
-      btn.setAttribute("onclick", "openModal(" + monthIndex + "," + day + ",true)");
-      btn.innerHTML = "＋ post";
-      dayEl.appendChild(btn);
-    }
-
-    if(typeof updateStats === "function"){
-      try{ updateStats(); }catch(e){ console.warn(e); }
-    }
-
-    if(typeof safeSaveSiteData === "function"){
-      try{ safeSaveSiteData(); }catch(e){ console.warn(e); }
-    }else if(typeof saveSiteData === "function"){
-      try{ saveSiteData(); }catch(e){ console.warn(e); }
-    }
-  };
-
-  window.togglePostado = function(monthIndex, day){
-    var card = getCard(monthIndex, day);
-    if(!card) return;
-
-    card.classList.toggle("postado");
-
-    var badge = card.querySelector(".postado-badge");
-    if(card.classList.contains("postado")){
-      if(!badge){
-        var b = document.createElement("div");
-        b.className = "postado-badge";
-        b.innerHTML = "✅ Postado";
-        var title = card.querySelector(".post-title");
-        card.insertBefore(b, title || null);
-      }
-    }else{
-      if(badge) badge.remove();
-    }
-
-    if(typeof updateStats === "function"){
-      try{ updateStats(); }catch(e){ console.warn(e); }
-    }
-  };
-
-  window.updateTitle = function(monthIndex, day, title){
-    var card = getCard(monthIndex, day);
-    if(!card) return;
-    var titleEl = card.querySelector(".post-title");
-    if(titleEl && titleEl.innerText !== title){
-      titleEl.innerText = title;
-    }
-  };
-
-  window.triggerCardImg = window.triggerCardImg || function(){
-    alert("Upload de imagem não disponível nesta versão corrigida.");
-  };
-})();
-</script>
 
 </body></html>
