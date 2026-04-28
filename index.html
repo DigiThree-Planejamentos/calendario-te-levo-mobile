@@ -240,7 +240,7 @@
   <span class="toolbar-label">Ações:</span>
   <button class="btn btn-cyan" onclick="window.print()">🖨 Imprimir</button>
   <button class="btn btn-ghost" onclick="exportHTML()">💾 Salvar HTML</button>
-  <button class="btn btn-cyan" type="button" onclick="saveSiteData()">🌐 Salvar no site</button>
+  <button class="btn btn-cyan" type="button" onclick="safeSaveSiteData()">🌐 Salvar no site</button>
   <button class="btn btn-ghost" id="editModeBtn" onclick="toggleEditMode()">✏️ Modo Edição</button>
   <button class="btn btn-ghost" onclick="openDatasModal()">🗓 Datas Comemorativas</button>
   <div class="month-nav" id="monthNav"><button class="month-btn" id="mnav0">Jan</button><button class="month-btn" id="mnav1">Fev</button><button class="month-btn" id="mnav2">Mar</button><button class="month-btn active" id="mnav3">Abr</button><button class="month-btn" id="mnav4">Mai</button><button class="month-btn" id="mnav5">Jun</button><button class="month-btn" id="mnav6">Jul</button><button class="month-btn" id="mnav7">Ago</button><button class="month-btn" id="mnav8">Set</button><button class="month-btn" id="mnav9">Out</button><button class="month-btn" id="mnav10">Nov</button><button class="month-btn" id="mnav11">Dez</button></div>
@@ -1529,81 +1529,54 @@ document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
 
 
 <script>
+/* SUPABASE_SAFE_TE_LEVO_V3 */
 (function(){
-  var SUPABASE_URL = "https://aprneolltdkizvfakuus.supabase.co";
-  var SUPABASE_ANON_KEY = "sb_publishable_tmWBQV8mZnk7FBvq1iZ3pA_lprGokcu";
-  var CALENDAR_ID = "te-levo-mobile-2026";
-  var CALENDAR_NAME = "Te Levo Mobile";
+  var SUPABASE_URL_SAFE = "https://aprneolltdkizvfakuus.supabase.co";
+  var SUPABASE_KEY_SAFE = "sb_publishable_tmWBQV8mZnk7FBvq1iZ3pA_lprGokcu";
+  var CALENDAR_ID_SAFE = "te-levo-mobile-2026";
+  var CALENDAR_NAME_SAFE = "Te Levo Mobile";
+  var clientSafe = null;
 
-  var supabaseClient = null;
-
-  function initSupabaseClient(){
+  function initClientSafe(){
     try{
       if(window.supabase && typeof window.supabase.createClient === "function"){
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        clientSafe = window.supabase.createClient(SUPABASE_URL_SAFE, SUPABASE_KEY_SAFE);
       }
-    }catch(e){
-      console.warn("Erro ao iniciar Supabase:", e);
+    }catch(err){
+      console.warn("Supabase init error", err);
     }
   }
 
-  function collectInputs(){
-    var values = {};
-    document.querySelectorAll("input, textarea, select").forEach(function(el, index){
-      var key = el.id || el.name || el.getAttribute("placeholder") || ("field_" + index);
-      values[key + "_" + index] = {
-        value: el.value || "",
-        checked: !!el.checked,
-        type: el.type || el.tagName.toLowerCase()
-      };
-    });
-    return values;
-  }
-
-  function restoreInputs(values){
-    if(!values) return;
-
-    document.querySelectorAll("input, textarea, select").forEach(function(el, index){
-      var key = el.id || el.name || el.getAttribute("placeholder") || ("field_" + index);
-      var saved = values[key + "_" + index];
-
-      if(!saved) return;
-
-      if(saved.type === "checkbox" || saved.type === "radio"){
-        el.checked = !!saved.checked;
-      }else{
-        el.value = saved.value || "";
-      }
-    });
-  }
-
-  function getSiteData(){
+  function safeCollectData(){
     var months = document.getElementById("monthsContainer");
+    var hdrClient = document.getElementById("hdrClient");
+    var hdrYear = document.getElementById("hdrYear");
+    var hdrSub = document.getElementById("hdrSub");
+
+    var fields = [];
+    var els = document.querySelectorAll("input, textarea, select");
+    for(var i = 0; i < els.length; i++){
+      fields.push({
+        value: els[i].value || "",
+        checked: !!els[i].checked,
+        type: els[i].type || els[i].tagName.toLowerCase()
+      });
+    }
 
     return {
       html: months ? months.innerHTML : "",
-      fields: collectInputs(),
+      fields: fields,
       header: {
-        client: document.getElementById("hdrClient") ? document.getElementById("hdrClient").innerText : "",
-        year: document.getElementById("hdrYear") ? document.getElementById("hdrYear").innerText : "",
-        sub: document.getElementById("hdrSub") ? document.getElementById("hdrSub").innerText : ""
-      },
-      stats: {
-        total: document.getElementById("statTotal") ? document.getElementById("statTotal").innerText : "",
-        arte: document.getElementById("statArte") ? document.getElementById("statArte").innerText : "",
-        foto: document.getElementById("statFoto") ? document.getElementById("statFoto").innerText : "",
-        story: document.getElementById("statStory") ? document.getElementById("statStory").innerText : "",
-        reels: document.getElementById("statReels") ? document.getElementById("statReels").innerText : "",
-        carrossel: document.getElementById("statCarrossel") ? document.getElementById("statCarrossel").innerText : "",
-        pend: document.getElementById("statPend") ? document.getElementById("statPend").innerText : "",
-        postado: document.getElementById("statPostado") ? document.getElementById("statPostado").innerText : ""
+        client: hdrClient ? hdrClient.innerText : "",
+        year: hdrYear ? hdrYear.innerText : "",
+        sub: hdrSub ? hdrSub.innerText : ""
       },
       savedAt: new Date().toISOString()
     };
   }
 
-  function applySiteData(data){
-    if(!data) return;
+  function safeApplyData(data){
+    if(!data){ return; }
 
     var months = document.getElementById("monthsContainer");
     if(months && data.html){
@@ -1611,156 +1584,113 @@ document.querySelectorAll('.month-block').forEach(el=>observer.observe(el));
     }
 
     if(data.header){
-      if(document.getElementById("hdrClient")) document.getElementById("hdrClient").innerText = data.header.client || "";
-      if(document.getElementById("hdrYear")) document.getElementById("hdrYear").innerText = data.header.year || "";
-      if(document.getElementById("hdrSub")) document.getElementById("hdrSub").innerText = data.header.sub || "";
+      var hdrClient = document.getElementById("hdrClient");
+      var hdrYear = document.getElementById("hdrYear");
+      var hdrSub = document.getElementById("hdrSub");
+      if(hdrClient){ hdrClient.innerText = data.header.client || ""; }
+      if(hdrYear){ hdrYear.innerText = data.header.year || ""; }
+      if(hdrSub){ hdrSub.innerText = data.header.sub || ""; }
     }
 
-    restoreInputs(data.fields);
-
-    if(data.stats){
-      var map = {
-        statTotal: "total",
-        statArte: "arte",
-        statFoto: "foto",
-        statStory: "story",
-        statReels: "reels",
-        statCarrossel: "carrossel",
-        statPend: "pend",
-        statPostado: "postado"
-      };
-
-      Object.keys(map).forEach(function(id){
-        var el = document.getElementById(id);
-        var key = map[id];
-        if(el && data.stats[key] !== undefined && data.stats[key] !== ""){
-          el.innerText = data.stats[key];
+    if(data.fields && data.fields.length){
+      var els = document.querySelectorAll("input, textarea, select");
+      for(var i = 0; i < els.length && i < data.fields.length; i++){
+        if(data.fields[i].type === "checkbox" || data.fields[i].type === "radio"){
+          els[i].checked = !!data.fields[i].checked;
+        }else{
+          els[i].value = data.fields[i].value || "";
         }
-      });
-    }
-
-    if(typeof bindEvents === "function"){
-      try{ bindEvents(); }catch(e){ console.warn(e); }
+      }
     }
   }
 
-  function saveLocalBackup(data){
+  window.safeSaveSiteData = async function(){
+    var payload = safeCollectData();
+
     try{
-      localStorage.setItem(CALENDAR_ID, JSON.stringify(data));
-    }catch(e){
-      console.warn("Erro no backup local:", e);
-    }
-  }
+      localStorage.setItem(CALENDAR_ID_SAFE, JSON.stringify(payload));
+    }catch(err){}
 
-  function loadLocalBackup(){
-    try{
-      var raw = localStorage.getItem(CALENDAR_ID);
-      if(!raw) return null;
-      return JSON.parse(raw);
-    }catch(e){
-      return null;
-    }
-  }
-
-  async function saveSiteData(){
-    var payload = getSiteData();
-    saveLocalBackup(payload);
-
-    var btn = document.querySelector('button[onclick="saveSiteData()"], button[onclick="saveSitedata()"]');
+    var btn = document.querySelector('button[onclick="safeSaveSiteData()"]');
     var oldText = btn ? btn.innerText : "";
-
     if(btn){
-      btn.innerText = "⏳ Salvando...";
+      btn.innerText = "Salvando...";
       btn.disabled = true;
     }
 
-    if(!supabaseClient){
-      initSupabaseClient();
-    }
+    if(!clientSafe){ initClientSafe(); }
 
-    if(!supabaseClient){
-      if(btn){
-        btn.innerText = oldText || "🌐 Salvar no site";
-        btn.disabled = false;
-      }
-      alert("Supabase não carregou. Verifique internet/CDN.");
+    if(!clientSafe){
+      if(btn){ btn.innerText = oldText || "🌐 Salvar no site"; btn.disabled = false; }
+      alert("Supabase não carregou.");
       return;
     }
 
     try{
-      var result = await supabaseClient
+      var result = await clientSafe
         .from("calendarios")
         .upsert({
-          id: CALENDAR_ID,
-          nome: CALENDAR_NAME,
+          id: CALENDAR_ID_SAFE,
+          nome: CALENDAR_NAME_SAFE,
           dados: payload
         }, { onConflict: "id" })
         .select();
 
       if(result.error){
-        console.error("Erro Supabase:", result.error);
-        alert("Erro ao salvar no Supabase: " + (result.error.message || JSON.stringify(result.error)));
+        console.error(result.error);
+        alert("Erro ao salvar no Supabase: " + (result.error.message || "erro desconhecido"));
         return;
       }
 
-      alert("Salvo no site! ID: " + CALENDAR_ID);
-    }catch(e){
-      console.error("Erro inesperado:", e);
-      alert("Erro inesperado ao salvar: " + (e.message || e));
+      alert("Salvo no site! ID: " + CALENDAR_ID_SAFE);
+    }catch(err){
+      console.error(err);
+      alert("Erro ao salvar: " + (err.message || err));
     }finally{
       if(btn){
         btn.innerText = oldText || "🌐 Salvar no site";
         btn.disabled = false;
       }
     }
-  }
+  };
 
-  async function loadSiteData(){
-    if(!supabaseClient){
-      initSupabaseClient();
-    }
+  window.safeLoadSiteData = async function(){
+    if(!clientSafe){ initClientSafe(); }
 
-    if(supabaseClient){
+    if(clientSafe){
       try{
-        var result = await supabaseClient
+        var result = await clientSafe
           .from("calendarios")
           .select("dados")
-          .eq("id", CALENDAR_ID)
+          .eq("id", CALENDAR_ID_SAFE)
           .maybeSingle();
 
         if(result.data && result.data.dados){
-          applySiteData(result.data.dados);
-          return true;
+          safeApplyData(result.data.dados);
+          return;
         }
-      }catch(e){
-        console.warn("Falha ao carregar Supabase:", e);
+      }catch(err){
+        console.warn(err);
       }
     }
 
-    var local = loadLocalBackup();
-    if(local){
-      applySiteData(local);
-      return true;
-    }
+    try{
+      var local = localStorage.getItem(CALENDAR_ID_SAFE);
+      if(local){ safeApplyData(JSON.parse(local)); }
+    }catch(err){}
+  };
 
-    return false;
-  }
-
-  window.saveSiteData = saveSiteData;
-  window.saveSitedata = saveSiteData;
-  window.loadSiteData = loadSiteData;
-  window.getSiteData = getSiteData;
-  window.applySiteData = applySiteData;
+  window.saveSiteData = window.safeSaveSiteData;
+  window.saveSitedata = window.safeSaveSiteData;
 
   document.addEventListener("DOMContentLoaded", function(){
-    initSupabaseClient();
-    setTimeout(loadSiteData, 400);
-    setTimeout(loadSiteData, 1200);
+    initClientSafe();
+    setTimeout(window.safeLoadSiteData, 800);
   });
 
   window.addEventListener("load", function(){
-    initSupabaseClient();
-    setTimeout(loadSiteData, 600);
+    initClientSafe();
+    setTimeout(window.safeLoadSiteData, 1200);
   });
 })();
 </script>
